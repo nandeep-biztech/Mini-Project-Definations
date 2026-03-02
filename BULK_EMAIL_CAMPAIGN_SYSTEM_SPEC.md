@@ -20,7 +20,33 @@ It is a controlled data-processing + campaign engine.
 
 ---
 
-## 2️⃣ Authentication
+## 2️⃣ User Journey
+
+### Flow (after login)
+
+1. **Login** — User authenticates.
+
+2. **Dashboard** — Single "Upload CSV" button. User uploads CSV file.
+
+3. **CSV Processing** — Full Data Validation Layer (Section 4) runs on upload. Validation summary shown before data table.
+
+4. **Data Table** — After validation, display table with CSV data and columns:
+   - Pagination
+   - Action column: allow delete row per row
+
+5. **Template Create/Edit** — User creates or edits email template.
+
+6. **Placeholder Status Table** — While editing template, show a table alongside the editor:
+   - Column 1: Placeholder name (from CSV columns)
+   - Column 2: ✅ or ❌ — indicates whether placeholder is valid (exists in CSV and available for replacement)
+
+7. **Submit Button** — Enabled only when all placeholders in template are available in CSV column titles for replacement. If invalid → display readable error below editor.
+
+8. **Send Mail** — When all steps complete, "Send Mail" button enabled. On click → process send (Section 6).
+
+---
+
+## 3️⃣ Authentication
 
 All campaign operations require authenticated users. No anonymous access.
 
@@ -86,22 +112,39 @@ Requirements:
 
 ### E. Users Table (Schema Reference)
 
-Full schema for `users` table (referenced in Section 7):
+Full schema for `users` table (referenced in Section 8):
 
-| Column        | Type         | Notes                    |
-|---------------|--------------|--------------------------|
-| id            | UUID/PK      |                          |
-| email         | VARCHAR(255) | UNIQUE, NOT NULL         |
-| password      | VARCHAR(255) | NOT NULL                 |
-| created_at    | TIMESTAMP    |                          |
-| updated_at    | TIMESTAMP    |                          |
-| last_login_at | TIMESTAMP    | Optional                 |
-
-Index on `email` for login lookups.
+| Column       | Type          | Notes                    |
+|--------------|---------------|--------------------------|
+| id           | UUID/PK       |                          |
+| email        | VARCHAR(255)  | UNIQUE, NOT NULL         |
+| password     | VARCHAR(255)  | NOT NULL                 |
+| firstName    | VARCHAR(100)  | Optional                 |
+| lastName     | VARCHAR(100)  | Optional                 |
+| profileImage | VARCHAR(500)  | Optional, URL or path    |
+| createdAt    | TIMESTAMP     |                          |
+| updatedAt    | TIMESTAMP     |                          |
+| lastLoginAt  | TIMESTAMP     | Optional                 |
 
 ---
 
-## 3️⃣ CSV Processing -- Full Data Validation Layer
+### F. Profile Update Flow
+
+Update Profile screen allows user to edit:
+
+- **profileImage** — upload or change avatar/image
+- **firstName** — editable
+- **lastName** — editable
+- **email** — read-only, not editable (identity field)
+
+Validation:
+
+- firstName/lastName: trim whitespace, optional max length
+- profileImage: validate file type (e.g., jpg, png, webp), size limit
+
+---
+
+## 4️⃣ CSV Processing -- Full Data Validation Layer
 
 This is where Python becomes serious.
 
@@ -117,6 +160,7 @@ System must validate:
 - File not empty
 - Header row exists
 - No duplicate column names
+- Column names must be snake_case (e.g., `first_name`, `email`, `created_at`) — no spaces allowed in column headers; these names are bound to template placeholders (Section 5)
 - Required column `email` exists
 - File size limit enforcement
 
@@ -204,28 +248,28 @@ This forces real system feedback loop.
 
 ---
 
-## 4️⃣ Placeholder Validation Logic (Improved)
+## 5️⃣ Placeholder Validation Logic (Improved)
 
-Template contains:
+Placeholders are **bound to CSV column names**. Template placeholders must use snake_case to match the CSV headers.
 
-Hello {name}, your meeting is on {date}
+Example — CSV has columns `first_name`, `email`, `meeting_date`:
+
+Hello {first_name}, your meeting is on {meeting_date}
 
 System must:
 
 - Extract placeholders using regex
-- Normalize placeholder names
-- Match against CSV headers
-- Case-insensitive matching
-- Reject unknown placeholders
+- Placeholder names must be snake_case (bound to CSV column names)
+- Match placeholders against CSV headers — each `{column_name}` maps to CSV column `column_name`
+- Reject unknown placeholders (not present in CSV)
 - Reject unused required fields (optional strict mode)
 
 Edge cases to handle:
 
-- `{ name }`
-- `{NAME}`
-- `{name1}`
-- `{name_1}`
-- Nested braces `{{name}}`
+- `{ first_name }` — trim whitespace, normalize to `first_name`
+- `{FIRST_NAME}` — normalize to snake_case `first_name` for matching
+- `{first_name1}` — invalid if no such CSV column
+- Nested braces `{{first_name}}` — reject or unwrap per implementation
 
 If mismatch → disable Send button.
 
@@ -236,7 +280,7 @@ Must validate both:
 
 ---
 
-## 5️⃣ Campaign Execution Flow (Improved)
+## 6️⃣ Campaign Execution Flow (Improved)
 
 When user clicks "Send Email":
 
@@ -245,12 +289,14 @@ When user clicks "Send Email":
 3. Push into background queue
 4. Send via SMTP
 5. Track per-recipient status:
-  - pending
-    - sent
-    - failed
-    - retried
+
+- pending
+  - sent
+  - failed
+  - retried
+
 6. Retry failed emails up to 3 times
-7. Final campaign summary
+2. Final campaign summary
 
 Must prevent:
 
@@ -259,7 +305,7 @@ Must prevent:
 
 ---
 
-## 6️⃣ Python Responsibilities (Now Clear & Strong)
+## 7️⃣ Python Responsibilities (Now Clear & Strong)
 
 Python must handle:
 
@@ -276,7 +322,7 @@ This ensures Python is not cosmetic.
 
 ---
 
-## 7️⃣ Database Schema (Refined)
+## 8️⃣ Database Schema (Refined)
 
 Tables:
 
@@ -284,26 +330,19 @@ Tables:
 
 #### uploads
 
-#### upload_validation_summary
+#### uploadValidationSummary
 
 #### campaigns
 
-#### campaign_recipients
+#### campaignRecipients
 
-#### email_logs
+#### emailLogs
 
-Indexes:
-
-- email index
-- campaign_id index
-- status index
-- created_at index
-
-Intern must justify indexing choices.
+Intern must create appropriate indexes and justify their choices.
 
 ---
 
-## 8️⃣ Failure Handling Requirements
+## 9️⃣ Failure Handling Requirements
 
 Intern must answer:
 
@@ -317,15 +356,18 @@ If they ignore this, they don't understand production systems.
 
 ---
 
-## 9️⃣ UI Requirements (Next.js)
+## 🔟 UI Requirements (Next.js)
 
 Must include:
 
 - **Auth pages**: Login, Register (and Logout in nav/header)
+- **Profile/Update Profile page**: Edit profileImage, firstName, lastName; email displayed read-only
 - Redirect to login when accessing protected routes while unauthenticated
+- **Dashboard**: Single "Upload CSV" button; after upload, validation summary
+- **Data table**: CSV data with columns, pagination, action column for delete row
+- **Template editor**: Create/edit template; placeholder status table alongside (placeholder name | ✅/❌)
+- **Submit/Send button**: Enabled only when all placeholders valid; readable error below editor when invalid
 - CSV validation report page
-- Template editor
-- Placeholder validation indicator
 - Campaign progress dashboard
 - Error breakdown table
 - Logs viewer
@@ -334,7 +376,7 @@ Must include:
 
 ---
 
-## 🔟 Non-Functional Requirements
+## 1️⃣1️⃣ Non-Functional Requirements
 
 - Centralized error handling
 - Structured logging (JSON logs preferred)
@@ -346,7 +388,7 @@ Must include:
 
 ---
 
-## 1️⃣1️⃣ Hard Mode Enhancements
+## 1️⃣2️⃣ Hard Mode Enhancements
 
 If intern is strong:
 
@@ -356,4 +398,3 @@ If intern is strong:
 - Add unsubscribe logic
 - Add HTML sanitization
 - Add throttling logic
-
