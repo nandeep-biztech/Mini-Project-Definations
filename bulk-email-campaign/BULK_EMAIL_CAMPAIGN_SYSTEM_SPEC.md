@@ -36,27 +36,18 @@ It is a controlled data-processing + campaign engine.
 ### Flow (after login)
 
 1. **Login** — User authenticates.
-
 2. **Dashboard** — Single "Upload CSV" button. User uploads CSV file.
-
 3. **CSV Processing** — Full Data Validation Layer (Section 5) runs on upload. Validation summary shown before data table.
-
 4. **Data Table** — After validation, display table with CSV data and columns:
-   - Pagination
-   - Action column: allow delete row per row
-
+  - Pagination
+  - Action column: allow delete row per row
 5. **Campaign Name** — User provides a campaign name to identify and maintain the campaign.
-
 6. **Template Create/Edit** — User creates or edits email template.
-
 7. **Placeholder Status Table** — While editing template, show a table alongside the editor:
-   - Column 1: Placeholder name (from CSV columns)
-   - Column 2: ✅ or ❌ — indicates whether placeholder is valid (exists in CSV and available for replacement)
-
+  - Column 1: Placeholder name (from CSV columns)
+  - Column 2: ✅ or ❌ — indicates whether placeholder is valid (exists in CSV and available for replacement)
 8. **Submit Button** — Enabled only when all placeholders in template are available in CSV column titles for replacement. On click → create campaign in database (persist campaign name, template, CSV data). If invalid → display readable error below editor.
-
 9. **Send Mail** — When campaign created, "Send Mail" button enabled. On click → process send (Section 7).
-
 10. **Campaign History** — Page listing campaigns created by the logged-in user only. Table with pagination; columns: campaign title, emails sent, action. Action column has "View details" button. On click: display template used; below that, display all recipient/CSV data for that campaign.
 
 ---
@@ -129,17 +120,19 @@ Requirements:
 
 Full schema for `users` table (required for auth):
 
-| Column       | Type          | Notes                    |
-|--------------|---------------|--------------------------|
-| id           | UUID/PK       |                          |
-| email        | VARCHAR(255)  | UNIQUE, NOT NULL         |
-| password     | VARCHAR(255)  | NOT NULL                 |
-| firstName    | VARCHAR(100)  | Optional                 |
-| lastName     | VARCHAR(100)  | Optional                 |
-| profileImage | VARCHAR(500)  | Optional, URL or path    |
-| createdAt    | TIMESTAMP     |                          |
-| updatedAt    | TIMESTAMP     |                          |
-| lastLoginAt  | TIMESTAMP     | Optional                 |
+
+| Column       | Type         | Notes                 |
+| ------------ | ------------ | --------------------- |
+| id           | UUID/PK      |                       |
+| email        | VARCHAR(255) | UNIQUE, NOT NULL      |
+| password     | VARCHAR(255) | NOT NULL              |
+| firstName    | VARCHAR(100) | Optional              |
+| lastName     | VARCHAR(100) | Optional              |
+| profileImage | VARCHAR(500) | Optional, URL or path |
+| createdAt    | TIMESTAMP    |                       |
+| updatedAt    | TIMESTAMP    |                       |
+| lastLoginAt  | TIMESTAMP    | Optional              |
+
 
 ---
 
@@ -227,7 +220,7 @@ System must:
 Provide strategy:
 
 - Remove duplicates automatically  
-  OR
+OR
 - Flag duplicates and show report
 
 Intern must justify decision.
@@ -304,12 +297,10 @@ When user clicks "Send Email":
 3. Push into background queue
 4. Send via SMTP
 5. Track per-recipient status:
-
-   - pending
-   - sent
-   - failed
-   - retried
-
+  - pending
+  - sent
+  - failed
+  - retried
 6. Retry failed emails up to 3 times
 7. Final campaign summary
 
@@ -371,13 +362,25 @@ If they ignore this, they don't understand production systems.
 Must include:
 
 - **Auth pages**: Login, Register (and Logout in nav/header)
+  ![Login](images/login.png)
 - **Profile/Update Profile page**: Edit profileImage, firstName, lastName; email displayed read-only
 - Redirect to login when accessing protected routes while unauthenticated
 - **Dashboard**: Single "Upload CSV" button; after upload, validation summary
-- **Campaign name**: Input field to name the campaign (for identification and maintenance)
+  ![Dashboard](images/dashboard.png)
+  ![Upload CSV](images/upload-csv.png)
+- **File validation**: Validation summary before data table
+  ![File Validation](images/file-validation.png)
 - **Data table**: CSV data with columns, pagination, action column for delete row
+  ![Review File Data](images/review-file-data.png)
+- **Campaign name**: Input field to name the campaign (for identification and maintenance)
+  ![Campaign Information](images/campaign-information.png)
 - **Template editor**: Create/edit template; placeholder status table alongside (placeholder name | ✅/❌)
+  ![Email Template](images/email-template.png)
+  ![Campaign Summary](images/campaign-summary.png)
 - **Campaign history page**: Table with pagination; columns: campaign title, emails sent, action (View details button). On View details: show template used; below, show all recipient/CSV data for that campaign. Display only campaigns created by the logged-in user.
+  ![Campaigns](images/campaigns.png)
+  ![Campaign Details](images/campaigns-details.png)
+  ![Campaign Details - Recipients](images/campaigns-details-recipients.png)
 - **Submit/Send button**: Enabled only when all placeholders valid; readable error below editor when invalid
 - CSV validation report page
 - Campaign progress dashboard
@@ -397,3 +400,4 @@ Must include:
 - Proper Git workflow
 - No business logic inside controllers
 - No blocking email sending inside request handler
+
