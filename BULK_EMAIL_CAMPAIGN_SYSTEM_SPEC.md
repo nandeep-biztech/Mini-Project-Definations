@@ -20,7 +20,18 @@ It is a controlled data-processing + campaign engine.
 
 ---
 
-## 2️⃣ User Journey
+## 2️⃣ Tech Stack
+
+- **Frontend**: Next.js
+- **UI**: shadcn/ui or Tailwind CSS
+- **Editor**: CKEditor 5 or Tiptap
+- **APIs**: Node.js (Express.js)
+- **Database**: PostgreSQL
+- **CSV processing**: Python
+
+---
+
+## 3️⃣ User Journey
 
 ### Flow (after login)
 
@@ -28,25 +39,29 @@ It is a controlled data-processing + campaign engine.
 
 2. **Dashboard** — Single "Upload CSV" button. User uploads CSV file.
 
-3. **CSV Processing** — Full Data Validation Layer (Section 4) runs on upload. Validation summary shown before data table.
+3. **CSV Processing** — Full Data Validation Layer (Section 5) runs on upload. Validation summary shown before data table.
 
 4. **Data Table** — After validation, display table with CSV data and columns:
    - Pagination
    - Action column: allow delete row per row
 
-5. **Template Create/Edit** — User creates or edits email template.
+5. **Campaign Name** — User provides a campaign name to identify and maintain the campaign.
 
-6. **Placeholder Status Table** — While editing template, show a table alongside the editor:
+6. **Template Create/Edit** — User creates or edits email template.
+
+7. **Placeholder Status Table** — While editing template, show a table alongside the editor:
    - Column 1: Placeholder name (from CSV columns)
    - Column 2: ✅ or ❌ — indicates whether placeholder is valid (exists in CSV and available for replacement)
 
-7. **Submit Button** — Enabled only when all placeholders in template are available in CSV column titles for replacement. If invalid → display readable error below editor.
+8. **Submit Button** — Enabled only when all placeholders in template are available in CSV column titles for replacement. On click → create campaign in database (persist campaign name, template, CSV data). If invalid → display readable error below editor.
 
-8. **Send Mail** — When all steps complete, "Send Mail" button enabled. On click → process send (Section 6).
+9. **Send Mail** — When campaign created, "Send Mail" button enabled. On click → process send (Section 7).
+
+10. **Campaign History** — Page listing campaigns created by the logged-in user only. Table with pagination; columns: campaign title, emails sent, action. Action column has "View details" button. On click: display template used; below that, display all recipient/CSV data for that campaign.
 
 ---
 
-## 3️⃣ Authentication
+## 4️⃣ Authentication
 
 All campaign operations require authenticated users. No anonymous access.
 
@@ -112,7 +127,7 @@ Requirements:
 
 ### E. Users Table (Schema Reference)
 
-Full schema for `users` table (referenced in Section 8):
+Full schema for `users` table (required for auth):
 
 | Column       | Type          | Notes                    |
 |--------------|---------------|--------------------------|
@@ -144,7 +159,7 @@ Validation:
 
 ---
 
-## 4️⃣ CSV Processing -- Full Data Validation Layer
+## 5️⃣ CSV Processing -- Full Data Validation Layer
 
 This is where Python becomes serious.
 
@@ -160,7 +175,7 @@ System must validate:
 - File not empty
 - Header row exists
 - No duplicate column names
-- Column names must be snake_case (e.g., `first_name`, `email`, `created_at`) — no spaces allowed in column headers; these names are bound to template placeholders (Section 5)
+- Column names must be snake_case (e.g., `first_name`, `email`, `created_at`) — no spaces allowed in column headers; these names are bound to template placeholders (Section 6)
 - Required column `email` exists
 - File size limit enforcement
 
@@ -248,7 +263,7 @@ This forces real system feedback loop.
 
 ---
 
-## 5️⃣ Placeholder Validation Logic (Improved)
+## 6️⃣ Placeholder Validation Logic (Improved)
 
 Placeholders are **bound to CSV column names**. Template placeholders must use snake_case to match the CSV headers.
 
@@ -280,7 +295,7 @@ Must validate both:
 
 ---
 
-## 6️⃣ Campaign Execution Flow (Improved)
+## 7️⃣ Campaign Execution Flow
 
 When user clicks "Send Email":
 
@@ -290,13 +305,13 @@ When user clicks "Send Email":
 4. Send via SMTP
 5. Track per-recipient status:
 
-- pending
-  - sent
-  - failed
-  - retried
+   - pending
+   - sent
+   - failed
+   - retried
 
 6. Retry failed emails up to 3 times
-2. Final campaign summary
+7. Final campaign summary
 
 Must prevent:
 
@@ -305,7 +320,7 @@ Must prevent:
 
 ---
 
-## 7️⃣ Python Responsibilities (Now Clear & Strong)
+## 8️⃣ Python Responsibilities
 
 Python must handle:
 
@@ -322,27 +337,22 @@ This ensures Python is not cosmetic.
 
 ---
 
-## 8️⃣ Database Schema (Refined)
+## 9️⃣ Database Schema (Guidelines)
 
-Tables:
+Intern must design the schema to support:
 
-#### users
+- User authentication and profile
+- CSV upload and validated data storage
+- Validation summary (total, valid, invalid, duplicate counts)
+- Campaign metadata (including campaign name), template, send status; campaigns linked to creating user
+- Per-recipient send tracking
+- Email audit trail
 
-#### uploads
-
-#### uploadValidationSummary
-
-#### campaigns
-
-#### campaignRecipients
-
-#### emailLogs
-
-Intern must create appropriate indexes and justify their choices.
+Use camelCase for column names. Create indexes and justify choices.
 
 ---
 
-## 9️⃣ Failure Handling Requirements
+## 🔟 Failure Handling Requirements
 
 Intern must answer:
 
@@ -356,7 +366,7 @@ If they ignore this, they don't understand production systems.
 
 ---
 
-## 🔟 UI Requirements (Next.js)
+## 1️⃣1️⃣ UI Requirements (Next.js)
 
 Must include:
 
@@ -364,8 +374,10 @@ Must include:
 - **Profile/Update Profile page**: Edit profileImage, firstName, lastName; email displayed read-only
 - Redirect to login when accessing protected routes while unauthenticated
 - **Dashboard**: Single "Upload CSV" button; after upload, validation summary
+- **Campaign name**: Input field to name the campaign (for identification and maintenance)
 - **Data table**: CSV data with columns, pagination, action column for delete row
 - **Template editor**: Create/edit template; placeholder status table alongside (placeholder name | ✅/❌)
+- **Campaign history page**: Table with pagination; columns: campaign title, emails sent, action (View details button). On View details: show template used; below, show all recipient/CSV data for that campaign. Display only campaigns created by the logged-in user.
 - **Submit/Send button**: Enabled only when all placeholders valid; readable error below editor when invalid
 - CSV validation report page
 - Campaign progress dashboard
@@ -376,7 +388,7 @@ Must include:
 
 ---
 
-## 1️⃣1️⃣ Non-Functional Requirements
+## 1️⃣2️⃣ Non-Functional Requirements
 
 - Centralized error handling
 - Structured logging (JSON logs preferred)
@@ -385,16 +397,3 @@ Must include:
 - Proper Git workflow
 - No business logic inside controllers
 - No blocking email sending inside request handler
-
----
-
-## 1️⃣2️⃣ Hard Mode Enhancements
-
-If intern is strong:
-
-- Add rate limiting per domain
-- Add scheduled sending
-- Add bounce tracking simulation
-- Add unsubscribe logic
-- Add HTML sanitization
-- Add throttling logic
