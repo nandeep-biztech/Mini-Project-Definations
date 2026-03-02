@@ -8,7 +8,7 @@ Index of project specs and definitions. Each link leads to the full specificatio
 
 | # | Project | Spec |
 | - | ------- | ---- |
-| 1 | Bulk Dynamic Email Campaign System | [BULK_EMAIL_CAMPAIGN_SYSTEM_SPEC.md](./BULK_EMAIL_CAMPAIGN_SYSTEM_SPEC.md) |
+| 1 | Bulk Dynamic Email Campaign System | [README.md](./bulk-email-campaign/README.md) |
 
 ---
 
